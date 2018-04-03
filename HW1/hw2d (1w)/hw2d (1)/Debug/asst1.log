@@ -1,0 +1,4 @@
+﻿  asst1.cpp
+\\mac\home\google 드라이브\1. 2018시즌 전반기\2. 컴그개\2. homeworks\hw2d (1)\asst1.cpp(28): warning C4996: 'std::tr1': warning STL4002: The non-Standard std::tr1 namespace and TR1-only machinery are deprecated and will be REMOVED. You can define _SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING to acknowledge that you have received this warning.
+  c:\program files (x86)\microsoft visual studio\2017\community\vc\tools\msvc\14.12.25827\include\memory(3067): note: 'std::tr1' 선언을 참조하십시오.
+  asst1.vcxproj -> \\Mac\Home\Google 드라이브\1. 2018시즌 전반기\2. 컴그개\2. Homeworks\hw2d (1)\./Debug\asst1.exe
