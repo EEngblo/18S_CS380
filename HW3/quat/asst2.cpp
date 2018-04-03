@@ -344,35 +344,35 @@ static void motion(const int x, const int y) {
   const double dx = x - g_mouseClickX;
   const double dy = g_windowHeight - y - 1 - g_mouseClickY;
 
-  Matrix4 m, a;
+  RigTForm m, a;
   if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
-    m = Matrix4::makeXRotation(-dy) * Matrix4::makeYRotation(dx);
+    m = RigTForm(Quat::makeXRotation(-dy)) * RigTForm(Quat::makeYRotation(dx));
   }
   else if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
-    m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+    m = RigTForm(Cvec3(dx, dy, 0) * 0.01);
   }
   else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
-    m = Matrix4::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+    m = RigTForm(Cvec3(0, 0, -dy) * 0.01);
   }
 
   if (modifyMode == Skycam){
     if (viewMode == Skycam){
       if(!skySkyMode){ // world-sky frame
         if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
-          m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * -0.01);
+          m = RigTForm(Cvec3(dx, dy, 0) * -0.01);
 
         }
         else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
-          m = Matrix4::makeTranslation(Cvec3(0, 0, dy) * 0.01);
+          m = RigTForm(Cvec3(0, 0, dy) * 0.01);
 
         }
-        a = linFact(g_objectRbt[viewMode]);
+        a = RigTForm(g_objectRbt[viewMode].getRotation());
       }else{
-        a = transFact(g_objectRbt[modifyMode]) * linFact(g_objectRbt[viewMode]);
+        a = RigTForm(g_objectRbt[modifyMode].getTranslation()) * RigTForm(g_objectRbt[viewMode].getRotation());
       }
 
       if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
-        m = inv(Matrix4::makeXRotation(-dy) * Matrix4::makeYRotation(dx));
+        m = inv(RigTForm(Quat::makeXRotation(-dy)) * RigTForm(Quat::makeYRotation(dx)));
 
       }
     }
@@ -381,7 +381,7 @@ static void motion(const int x, const int y) {
       return;
     }
   }else{
-    a = transFact(g_objectRbt[modifyMode]) * linFact(g_objectRbt[viewMode]);
+    a = RigTForm(g_objectRbt[modifyMode].getTranslation()) * RigTForm(g_objectRbt[viewMode].getRotation());
     if (modifyMode == viewMode && g_mouseLClickButton && !g_mouseRClickButton)
       m = inv(m);
     /*if (modifyMode == Cube1){
