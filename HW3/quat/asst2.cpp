@@ -198,9 +198,9 @@ static shared_ptr<Geometry> g_ground, g_cube;
 // --------- Scene
 
 static const Cvec3 g_light1(2.0, 3.0, 14.0), g_light2(-2, -3.0, -5.0);  // define two lights positions in world space
-static Matrix4 g_skyRbt = Matrix4::makeTranslation(Cvec3(0.0, 0.25, 4.0));
-static Matrix4 g_objectRbt[3] = {Matrix4::makeTranslation(Cvec3(-1,0,0)), // currently only 1 obj is defined
-                                 Matrix4::makeTranslation(Cvec3(1,0,0)),
+static RigTForm g_skyRbt = RigTForm(Cvec3(0.0, 0.25, 4.0));
+static RigTForm g_objectRbt[3] = {RigTForm(Cvec3(-1,0,0)), // currently only 1 obj is defined
+                                 RigTForm(Cvec3(1,0,0)),
                                g_skyRbt};  // new one
 static Cvec3f g_objectColors[2] = {Cvec3f(1, 0, 0), Cvec3f(0, 1, 0)};
 
@@ -275,10 +275,10 @@ static void drawStuff() {
   sendProjectionMatrix(curSS, projmat);
 
   //===================================================================
-  const Matrix4 eyeRbt = g_objectRbt[viewMode];
+  const RigTForm eyeRbt = g_objectRbt[viewMode];
 
   //===================================================================
-  const Matrix4 invEyeRbt = inv(eyeRbt);
+  RigTForm invEyeRbt = inv(eyeRbt);
 
   const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
   const Cvec3 eyeLight2 = Cvec3(invEyeRbt * Cvec4(g_light2, 1)); // g_light2 position in eye coordinates
@@ -288,8 +288,9 @@ static void drawStuff() {
   // draw ground
   // ===========
   //
-  const Matrix4 groundRbt = Matrix4();  // identity
-  Matrix4 MVM = invEyeRbt * groundRbt;
+  const RigTForm groundRbt = RigTForm();  // identity
+  RigTForm MVM_rgt = invEyeRbt * groundRbt;
+  Matrix4 MVM = rigTFormToMatrix(MVM_rgt);
   Matrix4 NMVM = normalMatrix(MVM);
   sendModelViewNormalMatrix(curSS, MVM, NMVM);
   safe_glUniform3f(curSS.h_uColor, 0.1, 0.95, 0.1); // set color
@@ -297,13 +298,15 @@ static void drawStuff() {
 //================================================================================
   // draw cubes
   // ==========
-  MVM = invEyeRbt * g_objectRbt[0];
+  MVM_rgt = invEyeRbt * g_objectRbt[0];
+  MVM = rigTFormToMatrix(MVM_rgt);
   NMVM = normalMatrix(MVM);
   sendModelViewNormalMatrix(curSS, MVM, NMVM);
   safe_glUniform3f(curSS.h_uColor, g_objectColors[0][0], g_objectColors[0][1], g_objectColors[0][2]);
   g_cube->draw(curSS);
 
-  MVM = invEyeRbt * g_objectRbt[1];
+  MVM_rgt = invEyeRbt * g_objectRbt[1];
+  MVM = rigTFormToMatrix(MVM_rgt);
   NMVM = normalMatrix(MVM);
   sendModelViewNormalMatrix(curSS, MVM, NMVM);
   safe_glUniform3f(curSS.h_uColor, g_objectColors[1][0], g_objectColors[1][1], g_objectColors[1][2]);
