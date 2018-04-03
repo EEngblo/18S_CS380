@@ -27,6 +27,7 @@
 #include "ppm.h"
 #include "glsupport.h"
 #include "rigtform.h"
+#include "arcball.h"
 
 using namespace std;      // for string, vector, iostream, and other standard C++ stuff
 using namespace tr1; // for shared_ptr
@@ -71,6 +72,12 @@ enum Mode {Cube1, Cube2, Skycam};
 static Mode viewMode = Skycam; // 2 for skyCam, 0 for cube1, 1 for cube2
 static Mode modifyMode = Skycam; // 2 for skyCam, 0 for cube1, 1 for cube2
 static bool skySkyMode = false;
+
+static const int sphereSlices = 16;
+static const int sphereStacks = 16;
+static double g_arcballScale;
+static int g_arcballScreenRadius;
+
 
 struct ShaderState {
   GlProgram program;
@@ -193,7 +200,7 @@ struct Geometry {
 
 
 // Vertex buffer and index buffer associated with the ground and cube geometry
-static shared_ptr<Geometry> g_ground, g_cube;
+static shared_ptr<Geometry> g_ground, g_cube, g_sphere;
 
 // --------- Scene
 
@@ -232,6 +239,21 @@ static void initCubes() {
   makeCube(1, vtx.begin(), idx.begin());
   g_cube.reset(new Geometry(&vtx[0], &idx[0], vbLen, ibLen));
 }
+
+////////////////////
+static void initSphere(int radius = 1){
+  int ibLen, vbLen;
+  getSphereVbIbLen(sphereSlices, sphereStacks, vbLen, ibLen);
+
+  vector<VertexPN> vtx(vbLen);
+  vector<unsigned short> idx(ibLen);
+
+  makeSphere(radius, sphereSlices, sphereStacks, vtx.begin(), idx.begin());
+  g_sphere.reset(new Geometry(&vtx[0], &idx[0], vbLen, ibLen));
+}
+
+
+//////////////////////////
 
 // takes a projection matrix and send to the the shaders
 static void sendProjectionMatrix(const ShaderState& curSS, const Matrix4& projMatrix) {
@@ -313,6 +335,44 @@ static void drawStuff() {
   g_cube->draw(curSS);
 
   //===============================================================================
+    // draw sphere
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+
+
+    if(modifyMode == viewMode && viewMode == Skycam && !skySkyMode){
+      // manipulating a sky camera w.r.t. world-sky coord
+
+      MVM_rgt = invEyeRbt;
+      MVM = rigTFormToMatrix(MVM_rgt);
+
+      g_arcballScale = getScreenToEyeScale(MVM_rgt.getTranslation()[2], g_frustFovY, g_windowHeight);
+      float radius = g_arcballScale * g_arcballScreenRadius;
+      MVM *= Matrix4::makeScale(Cvec3(radius, radius, radius));
+      NMVM = normalMatrix(MVM);
+
+      sendModelViewNormalMatrix(curSS, MVM, NMVM);
+      safe_glUniform3f(curSS.h_uColor, 1, 1, 1);
+      g_sphere->draw(curSS);
+
+    }else if(modifyMode != viewMode && modifyMode != Skycam){
+      // manipulating a box w.r.t. any frame except the box itself
+
+      MVM_rgt = invEyeRbt * g_objectRbt[modifyMode];
+      MVM = rigTFormToMatrix(MVM_rgt);
+
+      g_arcballScale = getScreenToEyeScale(MVM_rgt.getTranslation()[2], g_frustFovY, g_windowHeight);
+      float radius = g_arcballScale * g_arcballScreenRadius;
+      MVM *= Matrix4::makeScale(Cvec3(radius, radius, radius));
+      NMVM = normalMatrix(MVM);
+
+      sendModelViewNormalMatrix(curSS, MVM, NMVM);
+      safe_glUniform3f(curSS.h_uColor, 1, 1, 1);
+      g_sphere->draw(curSS);
+    }
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 static void display() {
@@ -330,7 +390,8 @@ static void reshape(const int w, const int h) {
   g_windowWidth = w;
   g_windowHeight = h;
   glViewport(0, 0, w, h);
-  cerr << "Size of window is now " << w << "x" << h << endl;
+  g_arcballScreenRadius = 0.25 * min(g_windowWidth, g_windowHeight);
+  cerr << "Size of window is now " << w << "x" << h << ", radius: " << g_arcballScreenRadius << endl;
   updateFrustFovY();
   glutPostRedisplay();
 }
@@ -502,6 +563,7 @@ static void initShaders() {
 static void initGeometry() {
   initGround();
   initCubes();
+  initSphere();
 }
 
 int main(int argc, char * argv[]) {
