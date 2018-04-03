@@ -82,41 +82,41 @@ struct ShaderState {
   GLint h_uColor;
 
   // Handles to vertex attributes
-  GLint h_aPosition;
-  GLint h_aNormal;
-
-  ShaderState(const char* vsfn, const char* fsfn) {
-    readAndCompileShader(program, vsfn, fsfn);
-
-    const GLuint h = program; // short hand
-
-    // Retrieve handles to uniform variables
-    h_uLight = safe_glGetUniformLocation(h, "uLight");
-    h_uLight2 = safe_glGetUniformLocation(h, "uLight2");
-    h_uProjMatrix = safe_glGetUniformLocation(h, "uProjMatrix");
-    h_uModelViewMatrix = safe_glGetUniformLocation(h, "uModelViewMatrix");
-    h_uNormalMatrix = safe_glGetUniformLocation(h, "uNormalMatrix");
-    h_uColor = safe_glGetUniformLocation(h, "uColor");
-
-    // Retrieve handles to vertex attributes
-    h_aPosition = safe_glGetAttribLocation(h, "aPosition");
-    h_aNormal = safe_glGetAttribLocation(h, "aNormal");
-
-    if (!g_Gl2Compatible)
-      glBindFragDataLocation(h, 0, "fragColor");
-    checkGlErrors();
-  }
-
+	GLint h_aPosition;
+	GLint h_aNormal;
+	
+	ShaderState(const char* vsfn, const char* fsfn) {
+		readAndCompileShader(program, vsfn, fsfn);
+		
+		const GLuint h = program; // short hand
+		
+		// Retrieve handles to uniform variables
+		h_uLight = safe_glGetUniformLocation(h, "uLight");
+		h_uLight2 = safe_glGetUniformLocation(h, "uLight2");
+		h_uProjMatrix = safe_glGetUniformLocation(h, "uProjMatrix");
+		h_uModelViewMatrix = safe_glGetUniformLocation(h, "uModelViewMatrix");
+		h_uNormalMatrix = safe_glGetUniformLocation(h, "uNormalMatrix");
+		h_uColor = safe_glGetUniformLocation(h, "uColor");
+		
+		// Retrieve handles to vertex attributes
+		h_aPosition = safe_glGetAttribLocation(h, "aPosition");
+		h_aNormal = safe_glGetAttribLocation(h, "aNormal");
+		
+		if (!g_Gl2Compatible)
+			glBindFragDataLocation(h, 0, "fragColor");
+		checkGlErrors();
+	}
+	
 };
 
 static const int g_numShaders = 2;
 static const char * const g_shaderFiles[g_numShaders][2] = {
-  {"./shaders/basic-gl3.vshader", "./shaders/diffuse-gl3.fshader"},
-  {"./shaders/basic-gl3.vshader", "./shaders/solid-gl3.fshader"}
+	{"./shaders/basic-gl3.vshader", "./shaders/diffuse-gl3.fshader"},
+	{"./shaders/basic-gl3.vshader", "./shaders/solid-gl3.fshader"}
 };
 static const char * const g_shaderFilesGl2[g_numShaders][2] = {
-  {"./shaders/basic-gl2.vshader", "./shaders/diffuse-gl2.fshader"},
-  {"./shaders/basic-gl2.vshader", "./shaders/solid-gl2.fshader"}
+	{"./shaders/basic-gl2.vshader", "./shaders/diffuse-gl2.fshader"},
+	{"./shaders/basic-gl2.vshader", "./shaders/solid-gl2.fshader"}
 };
 static vector<shared_ptr<ShaderState> > g_shaderStates; // our global shader states
 
@@ -127,66 +127,66 @@ static vector<shared_ptr<ShaderState> > g_shaderStates; // our global shader sta
 
 // A vertex with floating point position and normal
 struct VertexPN {
-
-
-
-  Cvec3f p, n;
-
-  VertexPN() {}
-  VertexPN(float x, float y, float z,
-           float nx, float ny, float nz)
-    : p(x,y,z), n(nx, ny, nz)
-  {}
-
-  // Define copy constructor and assignment operator from GenericVertex so we can
-  // use make* functions from geometrymaker.h
-  VertexPN(const GenericVertex& v) {
-    *this = v;
-  }
-
-  VertexPN& operator = (const GenericVertex& v) {
-    p = v.pos;
-    n = v.normal;
-    return *this;
-  }
+	
+	
+	
+	Cvec3f p, n;
+	
+	VertexPN() {}
+	VertexPN(float x, float y, float z,
+			 float nx, float ny, float nz)
+	: p(x,y,z), n(nx, ny, nz)
+	{}
+	
+	// Define copy constructor and assignment operator from GenericVertex so we can
+	// use make* functions from geometrymaker.h
+	VertexPN(const GenericVertex& v) {
+		*this = v;
+	}
+	
+	VertexPN& operator = (const GenericVertex& v) {
+		p = v.pos;
+		n = v.normal;
+		return *this;
+	}
 };
 
 struct Geometry {
-  GlBufferObject vbo, ibo;
-  int vboLen, iboLen;
-
-  Geometry(VertexPN *vtx, unsigned short *idx, int vboLen, int iboLen) {
-    this->vboLen = vboLen;
-    this->iboLen = iboLen;
-
-    // Now create the VBO and IBO
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(VertexPN) * vboLen, vtx, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned short) * iboLen, idx, GL_STATIC_DRAW);
-  }
-
-  void draw(const ShaderState& curSS) {
-    // Enable the attributes used by our shader
-    safe_glEnableVertexAttribArray(curSS.h_aPosition);
-    safe_glEnableVertexAttribArray(curSS.h_aNormal);
-
-    // bind vbo
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    safe_glVertexAttribPointer(curSS.h_aPosition, 3, GL_FLOAT, GL_FALSE, sizeof(VertexPN), FIELD_OFFSET(VertexPN, p));
-    safe_glVertexAttribPointer(curSS.h_aNormal, 3, GL_FLOAT, GL_FALSE, sizeof(VertexPN), FIELD_OFFSET(VertexPN, n));
-
-    // bind ibo
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-
-    // draw!
-    glDrawElements(GL_TRIANGLES, iboLen, GL_UNSIGNED_SHORT, 0);
-
-    // Disable the attributes used by our shader
-    safe_glDisableVertexAttribArray(curSS.h_aPosition);
-    safe_glDisableVertexAttribArray(curSS.h_aNormal);
-  }
+	GlBufferObject vbo, ibo;
+	int vboLen, iboLen;
+	
+	Geometry(VertexPN *vtx, unsigned short *idx, int vboLen, int iboLen) {
+		this->vboLen = vboLen;
+		this->iboLen = iboLen;
+		
+		// Now create the VBO and IBO
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(VertexPN) * vboLen, vtx, GL_STATIC_DRAW);
+		
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned short) * iboLen, idx, GL_STATIC_DRAW);
+	}
+	
+	void draw(const ShaderState& curSS) {
+		// Enable the attributes used by our shader
+		safe_glEnableVertexAttribArray(curSS.h_aPosition);
+		safe_glEnableVertexAttribArray(curSS.h_aNormal);
+		
+		// bind vbo
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		safe_glVertexAttribPointer(curSS.h_aPosition, 3, GL_FLOAT, GL_FALSE, sizeof(VertexPN), FIELD_OFFSET(VertexPN, p));
+		safe_glVertexAttribPointer(curSS.h_aNormal, 3, GL_FLOAT, GL_FALSE, sizeof(VertexPN), FIELD_OFFSET(VertexPN, n));
+		
+		// bind ibo
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+		
+		// draw!
+		glDrawElements(GL_TRIANGLES, iboLen, GL_UNSIGNED_SHORT, 0);
+		
+		// Disable the attributes used by our shader
+		safe_glDisableVertexAttribArray(curSS.h_aPosition);
+		safe_glDisableVertexAttribArray(curSS.h_aNormal);
+	}
 };
 
 
@@ -198,8 +198,8 @@ static shared_ptr<Geometry> g_ground, g_cube;
 static const Cvec3 g_light1(2.0, 3.0, 14.0), g_light2(-2, -3.0, -5.0);  // define two lights positions in world space
 static Matrix4 g_skyRbt = Matrix4::makeTranslation(Cvec3(0.0, 0.25, 4.0));
 static Matrix4 g_objectRbt[3] = {Matrix4::makeTranslation(Cvec3(-1,0,0)), // currently only 1 obj is defined
-                                 Matrix4::makeTranslation(Cvec3(1,0,0)),
-                               g_skyRbt};  // new one
+	Matrix4::makeTranslation(Cvec3(1,0,0)),
+	g_skyRbt};  // new one
 static Cvec3f g_objectColors[2] = {Cvec3f(1, 0, 0), Cvec3f(0, 1, 0)};
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
@@ -208,175 +208,175 @@ static Cvec3f g_objectColors[2] = {Cvec3f(1, 0, 0), Cvec3f(0, 1, 0)};
 
 
 static void initGround() {
-  // A x-z plane at y = g_groundY of dimension [-g_groundSize, g_groundSize]^2
-  VertexPN vtx[4] = {
-    VertexPN(-g_groundSize, g_groundY, -g_groundSize, 0, 1, 0),
-    VertexPN(-g_groundSize, g_groundY,  g_groundSize, 0, 1, 0),
-    VertexPN( g_groundSize, g_groundY,  g_groundSize, 0, 1, 0),
-    VertexPN( g_groundSize, g_groundY, -g_groundSize, 0, 1, 0),
-  };
-  unsigned short idx[] = {0, 1, 2, 0, 2, 3};
-  g_ground.reset(new Geometry(&vtx[0], &idx[0], 4, 6));
+	// A x-z plane at y = g_groundY of dimension [-g_groundSize, g_groundSize]^2
+	VertexPN vtx[4] = {
+		VertexPN(-g_groundSize, g_groundY, -g_groundSize, 0, 1, 0),
+		VertexPN(-g_groundSize, g_groundY,  g_groundSize, 0, 1, 0),
+		VertexPN( g_groundSize, g_groundY,  g_groundSize, 0, 1, 0),
+		VertexPN( g_groundSize, g_groundY, -g_groundSize, 0, 1, 0),
+	};
+	unsigned short idx[] = {0, 1, 2, 0, 2, 3};
+	g_ground.reset(new Geometry(&vtx[0], &idx[0], 4, 6));
 }
 
 static void initCubes() {
-  int ibLen, vbLen;
-  getCubeVbIbLen(vbLen, ibLen);
-
-  // Temporary storage for cube geometry
-  vector<VertexPN> vtx(vbLen);
-  vector<unsigned short> idx(ibLen);
-
-  makeCube(1, vtx.begin(), idx.begin());
-  g_cube.reset(new Geometry(&vtx[0], &idx[0], vbLen, ibLen));
+	int ibLen, vbLen;
+	getCubeVbIbLen(vbLen, ibLen);
+	
+	// Temporary storage for cube geometry
+	vector<VertexPN> vtx(vbLen);
+	vector<unsigned short> idx(ibLen);
+	
+	makeCube(1, vtx.begin(), idx.begin());
+	g_cube.reset(new Geometry(&vtx[0], &idx[0], vbLen, ibLen));
 }
 
 // takes a projection matrix and send to the the shaders
 static void sendProjectionMatrix(const ShaderState& curSS, const Matrix4& projMatrix) {
-  GLfloat glmatrix[16];
-  projMatrix.writeToColumnMajorMatrix(glmatrix); // send projection matrix
-  safe_glUniformMatrix4fv(curSS.h_uProjMatrix, glmatrix);
+	GLfloat glmatrix[16];
+	projMatrix.writeToColumnMajorMatrix(glmatrix); // send projection matrix
+	safe_glUniformMatrix4fv(curSS.h_uProjMatrix, glmatrix);
 }
 
 // takes MVM and its normal matrix to the shaders
 static void sendModelViewNormalMatrix(const ShaderState& curSS, const Matrix4& MVM, const Matrix4& NMVM) {
-  GLfloat glmatrix[16];
-  MVM.writeToColumnMajorMatrix(glmatrix); // send MVM
-  safe_glUniformMatrix4fv(curSS.h_uModelViewMatrix, glmatrix);
-
-  NMVM.writeToColumnMajorMatrix(glmatrix); // send NMVM
-  safe_glUniformMatrix4fv(curSS.h_uNormalMatrix, glmatrix);
+	GLfloat glmatrix[16];
+	MVM.writeToColumnMajorMatrix(glmatrix); // send MVM
+	safe_glUniformMatrix4fv(curSS.h_uModelViewMatrix, glmatrix);
+	
+	NMVM.writeToColumnMajorMatrix(glmatrix); // send NMVM
+	safe_glUniformMatrix4fv(curSS.h_uNormalMatrix, glmatrix);
 }
 
 // update g_frustFovY from g_frustMinFov, g_windowWidth, and g_windowHeight
 static void updateFrustFovY() {
-  if (g_windowWidth >= g_windowHeight)
-    g_frustFovY = g_frustMinFov;
-  else {
-    const double RAD_PER_DEG = 0.5 * CS175_PI/180;
-    g_frustFovY = atan2(sin(g_frustMinFov * RAD_PER_DEG) * g_windowHeight / g_windowWidth, cos(g_frustMinFov * RAD_PER_DEG)) / RAD_PER_DEG;
-  }
+	if (g_windowWidth >= g_windowHeight)
+		g_frustFovY = g_frustMinFov;
+	else {
+		const double RAD_PER_DEG = 0.5 * CS175_PI/180;
+		g_frustFovY = atan2(sin(g_frustMinFov * RAD_PER_DEG) * g_windowHeight / g_windowWidth, cos(g_frustMinFov * RAD_PER_DEG)) / RAD_PER_DEG;
+	}
 }
 
 static Matrix4 makeProjectionMatrix() {
-  return Matrix4::makeProjection(
-           g_frustFovY, g_windowWidth / static_cast <double> (g_windowHeight),
-           g_frustNear, g_frustFar);
+	return Matrix4::makeProjection(
+								   g_frustFovY, g_windowWidth / static_cast <double> (g_windowHeight),
+								   g_frustNear, g_frustFar);
 }
 
 static void drawStuff() {
-  // short hand for current shader state
-  const ShaderState& curSS = *g_shaderStates[g_activeShader];
-
-  // build & send proj. matrix to vshader
-  const Matrix4 projmat = makeProjectionMatrix();
-  sendProjectionMatrix(curSS, projmat);
-
-  //===================================================================
-  const Matrix4 eyeRbt = g_objectRbt[viewMode];
-
-  //===================================================================
-  const Matrix4 invEyeRbt = inv(eyeRbt);
-
-  const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
-  const Cvec3 eyeLight2 = Cvec3(invEyeRbt * Cvec4(g_light2, 1)); // g_light2 position in eye coordinates
-  safe_glUniform3f(curSS.h_uLight, eyeLight1[0], eyeLight1[1], eyeLight1[2]);
-  safe_glUniform3f(curSS.h_uLight2, eyeLight2[0], eyeLight2[1], eyeLight2[2]);
-
-  // draw ground
-  // ===========
-  //
-  const Matrix4 groundRbt = Matrix4();  // identity
-  Matrix4 MVM = invEyeRbt * groundRbt;
-  Matrix4 NMVM = normalMatrix(MVM);
-  sendModelViewNormalMatrix(curSS, MVM, NMVM);
-  safe_glUniform3f(curSS.h_uColor, 0.1, 0.95, 0.1); // set color
-  g_ground->draw(curSS);
-//================================================================================
-  // draw cubes
-  // ==========
-  MVM = invEyeRbt * g_objectRbt[0];
-  NMVM = normalMatrix(MVM);
-  sendModelViewNormalMatrix(curSS, MVM, NMVM);
-  safe_glUniform3f(curSS.h_uColor, g_objectColors[0][0], g_objectColors[0][1], g_objectColors[0][2]);
-  g_cube->draw(curSS);
-
-  MVM = invEyeRbt * g_objectRbt[1];
-  NMVM = normalMatrix(MVM);
-  sendModelViewNormalMatrix(curSS, MVM, NMVM);
-  safe_glUniform3f(curSS.h_uColor, g_objectColors[1][0], g_objectColors[1][1], g_objectColors[1][2]);
-  g_cube->draw(curSS);
-
-  //===============================================================================
+	// short hand for current shader state
+	const ShaderState& curSS = *g_shaderStates[g_activeShader];
+	
+	// build & send proj. matrix to vshader
+	const Matrix4 projmat = makeProjectionMatrix();
+	sendProjectionMatrix(curSS, projmat);
+	
+	//===================================================================
+	const Matrix4 eyeRbt = g_objectRbt[viewMode];
+	
+	//===================================================================
+	const Matrix4 invEyeRbt = inv(eyeRbt);
+	
+	const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
+	const Cvec3 eyeLight2 = Cvec3(invEyeRbt * Cvec4(g_light2, 1)); // g_light2 position in eye coordinates
+	safe_glUniform3f(curSS.h_uLight, eyeLight1[0], eyeLight1[1], eyeLight1[2]);
+	safe_glUniform3f(curSS.h_uLight2, eyeLight2[0], eyeLight2[1], eyeLight2[2]);
+	
+	// draw ground
+	// ===========
+	//
+	const Matrix4 groundRbt = Matrix4();  // identity
+	Matrix4 MVM = invEyeRbt * groundRbt;
+	Matrix4 NMVM = normalMatrix(MVM);
+	sendModelViewNormalMatrix(curSS, MVM, NMVM);
+	safe_glUniform3f(curSS.h_uColor, 0.1, 0.95, 0.1); // set color
+	g_ground->draw(curSS);
+	//================================================================================
+	// draw cubes
+	// ==========
+	MVM = invEyeRbt * g_objectRbt[0];
+	NMVM = normalMatrix(MVM);
+	sendModelViewNormalMatrix(curSS, MVM, NMVM);
+	safe_glUniform3f(curSS.h_uColor, g_objectColors[0][0], g_objectColors[0][1], g_objectColors[0][2]);
+	g_cube->draw(curSS);
+	
+	MVM = invEyeRbt * g_objectRbt[1];
+	NMVM = normalMatrix(MVM);
+	sendModelViewNormalMatrix(curSS, MVM, NMVM);
+	safe_glUniform3f(curSS.h_uColor, g_objectColors[1][0], g_objectColors[1][1], g_objectColors[1][2]);
+	g_cube->draw(curSS);
+	
+	//===============================================================================
 }
 
 static void display() {
-  glUseProgram(g_shaderStates[g_activeShader]->program);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                   // clear framebuffer color&depth
-
-  drawStuff();
-
-  glutSwapBuffers();                                    // show the back buffer (where we rendered stuff)
-
-  checkGlErrors();
+	glUseProgram(g_shaderStates[g_activeShader]->program);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                   // clear framebuffer color&depth
+	
+	drawStuff();
+	
+	glutSwapBuffers();                                    // show the back buffer (where we rendered stuff)
+	
+	checkGlErrors();
 }
 
 static void reshape(const int w, const int h) {
-  g_windowWidth = w;
-  g_windowHeight = h;
-  glViewport(0, 0, w, h);
-  cerr << "Size of window is now " << w << "x" << h << endl;
-  updateFrustFovY();
-  glutPostRedisplay();
+	g_windowWidth = w;
+	g_windowHeight = h;
+	glViewport(0, 0, w, h);
+	cerr << "Size of window is now " << w << "x" << h << endl;
+	updateFrustFovY();
+	glutPostRedisplay();
 }
 
 
 static void motion(const int x, const int y) {
-
-
-
-
-  const double dx = x - g_mouseClickX;
-  const double dy = g_windowHeight - y - 1 - g_mouseClickY;
-
-  Matrix4 m, a;
-  if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
-    m = Matrix4::makeXRotation(-dy) * Matrix4::makeYRotation(dx);
-  }
-  else if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
-    m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
-  }
-  else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
-    m = Matrix4::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
-  }
-
-  if (modifyMode == Skycam){
-    if (viewMode == Skycam){
-      if(!skySkyMode){ // world-sky frame
-        if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
-          m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * -0.01);
-
-        }
-        else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
-          m = Matrix4::makeTranslation(Cvec3(0, 0, dy) * 0.01);
-
-        }
-        a = linFact(g_objectRbt[viewMode]);
-      }else{
-        a = transFact(g_objectRbt[modifyMode]) * linFact(g_objectRbt[viewMode]);
-      }
-
-      if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
-        m = inv(Matrix4::makeXRotation(-dy) * Matrix4::makeYRotation(dx));
-
-      }
-    }
-    else{
-      cout << "Cannot modify sky camera in cube view!" << endl;
-      return;
-    }
-  }else{
-    a = transFact(g_objectRbt[modifyMode]) * linFact(g_objectRbt[viewMode]);
+	
+	
+	
+	
+	const double dx = x - g_mouseClickX;
+	const double dy = g_windowHeight - y - 1 - g_mouseClickY;
+	
+	Matrix4 m, a;
+	if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
+		m = Matrix4::makeXRotation(-dy) * Matrix4::makeYRotation(dx);
+	}
+	else if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
+		m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+	}
+	else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
+		m = Matrix4::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+	}
+	
+	if (modifyMode == Skycam){
+		if (viewMode == Skycam){
+			if(!skySkyMode){ // world-sky frame
+				if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
+					m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * -0.01);
+					
+				}
+				else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
+					m = Matrix4::makeTranslation(Cvec3(0, 0, dy) * 0.01);
+					
+				}
+				a = linFact(g_objectRbt[viewMode]);
+			}else{
+				a = transFact(g_objectRbt[modifyMode]) * linFact(g_objectRbt[viewMode]);
+			}
+			
+			if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
+				m = inv(Matrix4::makeXRotation(-dy) * Matrix4::makeYRotation(dx));
+				
+			}
+		}
+		else{
+			cout << "Cannot modify sky camera in cube view!" << endl;
+			return;
+		}
+	}else{
+		a = transFact(g_objectRbt[modifyMode]) * linFact(g_objectRbt[viewMode]);
     if (modifyMode == viewMode && g_mouseLClickButton && !g_mouseRClickButton)
       m = inv(m);
     /*if (modifyMode == Cube1){

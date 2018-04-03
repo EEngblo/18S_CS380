@@ -275,7 +275,7 @@ static void drawStuff() {
   sendProjectionMatrix(curSS, projmat);
 
   //===================================================================
-  const RigTForm eyeRbt = g_objectRbt[viewMode];
+  const RigTForm eyeRbt = (g_objectRbt[viewMode]);
 
   //===================================================================
   RigTForm invEyeRbt = inv(eyeRbt);
@@ -357,18 +357,19 @@ static void motion(const int x, const int y) {
 
   if (modifyMode == Skycam){
     if (viewMode == Skycam){
-      if(!skySkyMode){ // world-sky frame
+      if(!skySkyMode){
+         // world-sky frame
         if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
           m = RigTForm(Cvec3(dx, dy, 0) * -0.01);
-
         }
         else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
           m = RigTForm(Cvec3(0, 0, dy) * 0.01);
-
         }
         a = RigTForm(g_objectRbt[viewMode].getRotation());
-      }else{
-        a = RigTForm(g_objectRbt[modifyMode].getTranslation()) * RigTForm(g_objectRbt[viewMode].getRotation());
+      }
+
+      else{
+        a = RigTForm(g_objectRbt[modifyMode].getTranslation(), g_objectRbt[viewMode].getRotation());
       }
 
       if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
@@ -380,21 +381,12 @@ static void motion(const int x, const int y) {
       cout << "Cannot modify sky camera in cube view!" << endl;
       return;
     }
+
   }else{
-    a = RigTForm(g_objectRbt[modifyMode].getTranslation()) * RigTForm(g_objectRbt[viewMode].getRotation());
+    a = RigTForm(g_objectRbt[modifyMode].getTranslation(), g_objectRbt[viewMode].getRotation());
     if (modifyMode == viewMode && g_mouseLClickButton && !g_mouseRClickButton)
       m = inv(m);
-    /*if (modifyMode == Cube1){
-    if (viewMode == Skycam){
-    }
-  }else if (modifyMode == Cube2){
-
-  }*/
   }
-
-
-
-
 
   if (g_mouseClickDown) {
     g_objectRbt[modifyMode] = a * m * inv(a) * g_objectRbt[modifyMode]; // Simply right-multiply is WRONG
