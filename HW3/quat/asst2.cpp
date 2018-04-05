@@ -77,7 +77,8 @@ static const int sphereSlices = 16;
 static const int sphereStacks = 16;
 static double g_arcballScale;
 static int g_arcballScreenRadius;
-
+static bool g_arcballScaleUpdate = true;
+static float radius;
 
 struct ShaderState {
   GlProgram program;
@@ -347,8 +348,13 @@ static void drawStuff() {
       MVM_rgt = invEyeRbt;
       MVM = rigTFormToMatrix(MVM_rgt);
 
-      g_arcballScale = getScreenToEyeScale(MVM_rgt.getTranslation()[2], g_frustFovY, g_windowHeight);
-      float radius = g_arcballScale * g_arcballScreenRadius;
+      if(g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton))
+        g_arcballScaleUpdate = false;
+
+
+      g_arcballScale = g_arcballScaleUpdate ? getScreenToEyeScale(MVM_rgt.getTranslation()[2], g_frustFovY, g_windowHeight) : g_arcballScale;
+
+      radius = g_arcballScale * g_arcballScreenRadius;
       MVM *= Matrix4::makeScale(Cvec3(radius, radius, radius));
       NMVM = normalMatrix(MVM);
 
@@ -362,8 +368,12 @@ static void drawStuff() {
       MVM_rgt = invEyeRbt * g_objectRbt[modifyMode];
       MVM = rigTFormToMatrix(MVM_rgt);
 
-      g_arcballScale = getScreenToEyeScale(MVM_rgt.getTranslation()[2], g_frustFovY, g_windowHeight);
-      float radius = g_arcballScale * g_arcballScreenRadius;
+      if(g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton))
+        g_arcballScaleUpdate = false;
+
+      g_arcballScale = g_arcballScaleUpdate ? getScreenToEyeScale(MVM_rgt.getTranslation()[2], g_frustFovY, g_windowHeight) : g_arcballScale;
+
+      radius = g_arcballScale * g_arcballScreenRadius;
       MVM *= Matrix4::makeScale(Cvec3(radius, radius, radius));
       NMVM = normalMatrix(MVM);
 
@@ -371,7 +381,8 @@ static void drawStuff() {
       safe_glUniform3f(curSS.h_uColor, 1, 1, 1);
       g_sphere->draw(curSS);
     }
-
+    cout << radius << endl;
+    g_arcballScaleUpdate = true;
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
@@ -398,8 +409,6 @@ static void reshape(const int w, const int h) {
 
 
 static void motion(const int x, const int y) {
-
-
 
 
   const double dx = x - g_mouseClickX;
@@ -472,6 +481,8 @@ static void mouse(const int button, const int state, const int x, const int y) {
   g_mouseMClickButton &= !(button == GLUT_MIDDLE_BUTTON && state == GLUT_UP);
 
   g_mouseClickDown = g_mouseLClickButton || g_mouseRClickButton || g_mouseMClickButton;
+
+  glutPostRedisplay();
 }
 
 
@@ -506,7 +517,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 
   case 'o':
     modifyMode = static_cast<Mode>((modifyMode+1)%3);
-
+    g_arcballScaleUpdate = true;
     cout << "modifyMode : ";
     if(modifyMode == 0) cout << "cube 1"<< endl;
     else if(modifyMode == 1) cout << "cube 2"<< endl;
@@ -514,6 +525,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
     break;
   case 'm':
     if(modifyMode == Skycam && viewMode == Skycam){
+      g_arcballScaleUpdate = true;
       skySkyMode = !skySkyMode;
       cout << "modifying skyCam in skyCam view : ";
       if(skySkyMode) cout << "sky-sky frame" << endl;
