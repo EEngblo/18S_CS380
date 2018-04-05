@@ -81,6 +81,8 @@ static bool g_arcballScaleUpdate = true;
 static float radius;
 static RigTForm invEyeRbt;
 
+static const double g_translationFactor = 0.01;
+
 struct ShaderState {
   GlProgram program;
 
@@ -474,10 +476,10 @@ static void motion(const int x, const int y) {
       if(!skySkyMode){
          // world-sky frame
         if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
-          m = RigTForm(Cvec3(dx, dy, 0) * -0.01);
+          m = inv(m);//RigTForm(Cvec3(dx, dy, 0) * -0.01);
         }
         else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
-          m = RigTForm(Cvec3(0, 0, dy) * 0.01);
+          m = inv(m);RigTForm(Cvec3(0, 0, dy) * 0.01);
         }
         a = RigTForm(g_objectRbt[viewMode].getRotation());
       }
