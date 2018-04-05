@@ -79,6 +79,7 @@ static double g_arcballScale;
 static int g_arcballScreenRadius;
 static bool g_arcballScaleUpdate = true;
 static float radius;
+static RigTForm invEyeRbt;
 
 struct ShaderState {
   GlProgram program;
@@ -301,7 +302,7 @@ static void drawStuff() {
   const RigTForm eyeRbt = (g_objectRbt[viewMode]);
 
   //===================================================================
-  RigTForm invEyeRbt = inv(eyeRbt);
+  invEyeRbt = inv(eyeRbt);
 
   const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
   const Cvec3 eyeLight2 = Cvec3(invEyeRbt * Cvec4(g_light2, 1)); // g_light2 position in eye coordinates
@@ -381,7 +382,7 @@ static void drawStuff() {
       safe_glUniform3f(curSS.h_uColor, 1, 1, 1);
       g_sphere->draw(curSS);
     }
-    cout << radius << endl;
+    //cout << radius << endl;
     g_arcballScaleUpdate = true;
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
@@ -407,16 +408,59 @@ static void reshape(const int w, const int h) {
   glutPostRedisplay();
 }
 
+static RigTForm arcballRotation(const int x1, const int y1, const int x2, const int y2){
+  Cvec2 origin2;
+  if(modifyMode == Skycam)
+    origin2 = getScreenSpaceCoord(inv(g_objectRbt[viewMode]).getTranslation(), makeProjectionMatrix(), g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
+  else
+    origin2 = getScreenSpaceCoord((inv(g_objectRbt[viewMode]) * g_objectRbt[modifyMode]).getTranslation(), makeProjectionMatrix(), g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
+
+  Cvec3 origin = Cvec3(origin2, 0);
+  //cout << origin[0] << " " << origin[1] << " " << origin[2] << endl;
+  Cvec3 s1 = Cvec3((double)x1, (double)y1, 0);
+  //cout << s1[0] << " " << s1[1] << " " << s1[2] << endl;
+  Cvec3 s2 = Cvec3((double)x2, (double)y2, 0);
+  //cout << s2[0] << " " << s2[1] << " " << s2[2] << endl;
+  //cout << endl;
+  Cvec3 v1 = s1 - origin;
+  Cvec3 v2 = s2 - origin;
+
+  if(norm(v1) >= g_arcballScreenRadius){
+    v1 = v1.normalize();
+    v1 *= g_arcballScreenRadius-CS175_EPS; // in order to avoid floating point approximation error
+    //cout << "v1warning!!" << endl;
+  }
+
+  if(norm(v2) >= g_arcballScreenRadius){
+    v2 = v2.normalize();
+    v2 *= g_arcballScreenRadius-CS175_EPS; // in order to avoid floating point approximation error
+    //cout << "v2warning!!" << endl;
+  }
+
+
+  v1[2] = sqrt(pow(g_arcballScreenRadius,2) - norm2(v1));
+  v2[2] = sqrt(pow(g_arcballScreenRadius,2) - norm2(v2));
+  v1 = v1.normalize();
+  v2 = v2.normalize();
+
+  Quat rot = Quat(dot(v1,v2), cross(v1,v2));
+  return RigTForm(rot);
+}
 
 static void motion(const int x, const int y) {
-
+  //cout << "x : " << g_mouseClickX << "->" << x << endl;
+  //cout << "y : " << g_mouseClickY << "->" << g_windowHeight - y - 1 << endl << endl;
 
   const double dx = x - g_mouseClickX;
   const double dy = g_windowHeight - y - 1 - g_mouseClickY;
 
   RigTForm m, a;
   if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
-    m = RigTForm(Quat::makeXRotation(-dy)) * RigTForm(Quat::makeYRotation(dx));
+    if((modifyMode == viewMode && viewMode == Skycam && !skySkyMode) || (modifyMode != viewMode && modifyMode != Skycam)){
+      m = arcballRotation(g_mouseClickX,g_mouseClickY,x, g_windowHeight - y -1);
+    } else {
+      m = RigTForm(Quat::makeXRotation(-dy)) * RigTForm(Quat::makeYRotation(dx));
+    }
   }
   else if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
     m = RigTForm(Cvec3(dx, dy, 0) * 0.01);
@@ -443,7 +487,7 @@ static void motion(const int x, const int y) {
       }
 
       if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
-        m = inv(RigTForm(Quat::makeXRotation(-dy)) * RigTForm(Quat::makeYRotation(dx)));
+        m = inv(m);
 
       }
     }
