@@ -193,6 +193,7 @@ struct Geometry {
     // bind ibo
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
+
     // draw!
     glDrawElements(GL_TRIANGLES, iboLen, GL_UNSIGNED_SHORT, 0);
 
