@@ -66,6 +66,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <AdditionalIncludeDirectories>lib</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4996;4838</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalDependencies>glew32.lib;glut32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -99,26 +100,40 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="glsupport.cpp" />
+    <ClCompile Include="picker.cpp" />
     <ClCompile Include="ppm.cpp" />
     <ClCompile Include="asst2.cpp" />
+    <ClCompile Include="scenegraph.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="arcball.h" />
+    <ClInclude Include="asstcommon.h" />
     <ClInclude Include="cvec.h" />
+    <ClInclude Include="drawer.h" />
     <ClInclude Include="geometrymaker.h" />
     <ClInclude Include="glsupport.h" />
     <ClInclude Include="matrix4.h" />
+    <ClInclude Include="picker.h" />
     <ClInclude Include="ppm.h" />
     <ClInclude Include="quat.h" />
     <ClInclude Include="rigtform.h" />
+    <ClInclude Include="scenegraph.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="AUTHORS" />
+    <None Include="glew32.dll" />
+    <None Include="glut32.dll" />
+    <None Include="LICENSE" />
+    <None Include="Makefile" />
     <None Include="shaders\basic-gl2.vshader" />
     <None Include="shaders\basic-gl3.vshader" />
     <None Include="shaders\diffuse-gl2.fshader" />
     <None Include="shaders\diffuse-gl3.fshader" />
     <None Include="shaders\solid-gl2.fshader" />
     <None Include="shaders\solid-gl3.fshader" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="README.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

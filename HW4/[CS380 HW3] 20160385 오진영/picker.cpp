@@ -12,16 +12,38 @@ Picker::Picker(const RigTForm& initialRbt, const ShaderState& curSS)
 
 bool Picker::visit(SgTransformNode& node) {
   // TODO
+  nodeStack_.push_back(node.shared_from_this());
   return drawer_.visit(node);
 }
 
 bool Picker::postVisit(SgTransformNode& node) {
   // TODO
+
+  nodeStack_.pop_back();
   return drawer_.postVisit(node);
 }
 
 bool Picker::visit(SgShapeNode& node) {
+  // Then when you have encountered a shape node
   // TODO
+
+  // you increase the id counter,
+  idCounter_++;
+
+  // ﬁnd the SgRbtNode that is closest from the top of the stack
+  // (which should be the shape node’s parent),
+  shared_ptr<SgRbtNode> q = dynamic_pointer_cast<SgRbtNode>(shared_ptr<SgNode>(nodeStack_.back()));
+
+  // and add the association between
+  // the id counter and the SgRbtNode to the map.
+  addToMap(idCounter_, q);
+
+  // you should convert the ID to RGB color
+  Cvec3 color = idToColor(idCounter_);
+
+  // set it to the uniform variable uIdColor
+  // through the handle h_uIdColor in ShaderState.
+  safe_glUniform3f(drawer_.getCurSS().h_uIdColor, color[0], color[1], color[2]);
   return drawer_.visit(node);
 }
 
@@ -29,10 +51,48 @@ bool Picker::postVisit(SgShapeNode& node) {
   // TODO
   return drawer_.postVisit(node);
 }
+/*
 
+void glReadPixels(	GLint x,
+ 	GLint y,
+ 	GLsizei width,
+ 	GLsizei height,
+ 	GLenum format,
+ 	GLenum type,
+ 	GLvoid * data);
+
+Parameters
+x, y
+Specify the window coordinates of the first pixel that is read from the frame buffer. This location is the lower left corner of a rectangular block of pixels.
+
+width, height
+Specify the dimensions of the pixel rectangle. width and height of one correspond to a single pixel.
+
+format
+Specifies the format of the pixel data. The following symbolic values are accepted: GL_ALPHA, GL_RGB, and GL_RGBA.
+
+type
+Specifies the data type of the pixel data. Must be one of GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT_5_6_5, GL_UNSIGNED_SHORT_4_4_4_4, or GL_UNSIGNED_SHORT_5_5_5_1.
+
+data
+Returns the pixel data.
+
+*/
 shared_ptr<SgRbtNode> Picker::getRbtNodeAtXY(int x, int y) {
   // TODO
-  return shared_ptr<SgRbtNode>(); // return null for now
+
+  // read a pixel from the framebuﬀer
+  PackedPixel pixel;
+  glReadPixels(x,y,1,1,GL_RGB,GL_UNSIGNED_BYTE, &pixel);
+
+  // convert it to an ID,
+  int tempID = colorToId(pixel);
+
+  // and looks up the ID in the map for the RbtNode.
+  shared_ptr<SgRbtNode> node = find(tempID);
+
+  return node;
+  //return shared_ptr<SgRbtNode>(); // return null for now
 }
 
 //------------------
