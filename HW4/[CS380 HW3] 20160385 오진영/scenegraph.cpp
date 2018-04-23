@@ -42,11 +42,6 @@ public:
   const RigTForm getAccumulatedRbt(int offsetFromStackTop = 0) {
     // TODO
 
-    //for(;offsetFromStackTop > 0; offsetFromStackTop--){
-    //  rbtStack_.pop_back();
-    //}
-    //return rbtStack_.back();
-    if(rbtStack_.size() == 0) exit(-1);
     return rbtStack_.at(rbtStack_.size() - 1 - offsetFromStackTop);
   }
 
@@ -62,18 +57,14 @@ public:
 
     if (node == target_){
       found_ = true;
-      //while(1) cout << "asdf" << rbtStack_.size() << endl;
-      return false;
     }
 
-    return true;
+    return !found_;
   }
 
   virtual bool postVisit(SgTransformNode& node) {
     // TODO
     rbtStack_.pop_back();
-    //cout << "Asf";
-    while(rbtStack_.size() == 0) cout << rbtStack_.size()<< endl;
     return true;
   }
 };

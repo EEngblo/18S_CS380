@@ -79,7 +79,6 @@ static int g_activeShader = 0;
 enum Mode {Robot1, Robot2, Skycam};
 
 static Mode viewMode = Skycam; // 2 for skyCam, 0 for cube1, 1 for cube2
-static Mode modifyMode = Skycam; // 2 for skyCam, 0 for cube1, 1 for cube2
 static bool skySkyMode = false;
 
 static const int sphereSlices = 16;
@@ -89,6 +88,7 @@ static int g_arcballScreenRadius;
 static bool g_arcballScaleUpdate = true;
 static float radius;
 static RigTForm invEyeRbt;
+static bool g_arcballMode = true;
 
 static const double g_translationFactor = 0.01;
 
@@ -299,7 +299,7 @@ static void drawStuff(const ShaderState& curSS, bool picking)  {
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 
-    if(!(skySkyMode && viewMode == Skycam) &&
+    if(!(skySkyMode && viewMode == Skycam && *viewNodes[viewMode] == g_currentPickedRbtNode) &&
        !(*viewNodes[viewMode] == g_currentPickedRbtNode && viewMode != Skycam) &&
        !(viewMode != Skycam && g_currentPickedRbtNode == g_skyNode)){
 
@@ -343,6 +343,14 @@ static void drawStuff(const ShaderState& curSS, bool picking)  {
       g_currentPickedRbtNode = *viewNodes[viewMode];   // set to viewMode
     }
     cout << g_currentPickedRbtNode << endl;
+    if(!(skySkyMode && viewMode == Skycam && *viewNodes[viewMode] == g_currentPickedRbtNode) &&
+       !(*viewNodes[viewMode] == g_currentPickedRbtNode && viewMode != Skycam) &&
+       !(viewMode != Skycam && g_currentPickedRbtNode == g_skyNode)){
+         cout<< "arcball mode!" << endl;
+         g_arcballMode = true;
+       }else{
+         g_arcballMode = false;
+       }
   }
 }
 
@@ -394,10 +402,10 @@ static void reshape(const int w, const int h) {
 
 static RigTForm arcballRotation(const int x1, const int y1, const int x2, const int y2){
   Cvec2 origin2;
-  if(modifyMode == Skycam)
-    origin2 = getScreenSpaceCoord(inv(g_objectRbt[viewMode]).getTranslation(), makeProjectionMatrix(), g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
+  if(g_currentPickedRbtNode == *viewNodes[viewMode])
+    origin2 = getScreenSpaceCoord(inv(getPathAccumRbt(g_world, g_skyNode)).getTranslation(), makeProjectionMatrix(), g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
   else
-    origin2 = getScreenSpaceCoord((inv(g_objectRbt[viewMode]) * g_objectRbt[modifyMode]).getTranslation(), makeProjectionMatrix(), g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
+    origin2 = getScreenSpaceCoord((inv(getPathAccumRbt(g_world, *viewNodes[viewMode])) * getPathAccumRbt(g_world, g_currentPickedRbtNode)).getTranslation(), makeProjectionMatrix(), g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
 
   Cvec3 origin = Cvec3(origin2, 0);
   //cout << origin[0] << " " << origin[1] << " " << origin[2] << endl;
@@ -435,67 +443,68 @@ static void motion(const int x, const int y) {
   //cout << "x : " << g_mouseClickX << "->" << x << endl;
   //cout << "y : " << g_mouseClickY << "->" << g_windowHeight - y - 1 << endl << endl;
 
+  RigTForm eyeMat = getPathAccumRbt(g_world, *viewNodes[viewMode]);
+  RigTForm viewMat = inv(eyeMat);
+
   const double dx = x - g_mouseClickX;
   const double dy = g_windowHeight - y - 1 - g_mouseClickY;
 
   RigTForm m, a;
   if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
-    if((modifyMode == viewMode && viewMode == Skycam && !skySkyMode) || (modifyMode != viewMode && modifyMode != Skycam)){
-      m = arcballRotation(g_mouseClickX,g_mouseClickY,x, g_windowHeight - y -1);
+    if(!(skySkyMode && viewMode == Skycam && *viewNodes[viewMode] == g_currentPickedRbtNode) &&
+       !(*viewNodes[viewMode] == g_currentPickedRbtNode && viewMode != Skycam) &&
+       !(viewMode != Skycam && g_currentPickedRbtNode == g_skyNode)){
+         m = arcballRotation(g_mouseClickX,g_mouseClickY,x, g_windowHeight - y -1);
     } else {
       m = RigTForm(Quat::makeXRotation(-dy)) * RigTForm(Quat::makeYRotation(dx));
     }
   }
   else if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
-    if((modifyMode == viewMode && viewMode == Skycam && !skySkyMode) || (modifyMode != viewMode && modifyMode != Skycam)){
-      m = RigTForm(Cvec3(dx, dy, 0) * g_arcballScale);
+    if(!(skySkyMode && viewMode == Skycam && *viewNodes[viewMode] == g_currentPickedRbtNode) &&
+       !(*viewNodes[viewMode] == g_currentPickedRbtNode && viewMode != Skycam) &&
+       !(viewMode != Skycam && g_currentPickedRbtNode == g_skyNode)){
+         m = RigTForm(Cvec3(dx, dy, 0) * g_arcballScale);
     } else {
       m = RigTForm(Cvec3(dx, dy, 0) * 0.01);
     }
   }
   else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
-    if((modifyMode == viewMode && viewMode == Skycam && !skySkyMode) || (modifyMode != viewMode && modifyMode != Skycam)){
-      m = RigTForm(Cvec3(0, 0, -dy) * g_arcballScale);
+    if(!(skySkyMode && viewMode == Skycam && *viewNodes[viewMode] == g_currentPickedRbtNode) &&
+       !(*viewNodes[viewMode] == g_currentPickedRbtNode && viewMode != Skycam) &&
+       !(viewMode != Skycam && g_currentPickedRbtNode == g_skyNode)){
+         m = RigTForm(Cvec3(0, 0, -dy) * g_arcballScale);
     } else {
       m = RigTForm(Cvec3(0, 0, -dy) * 0.01);
     }
   }
 
-  if (modifyMode == Skycam){
-    if (viewMode == Skycam){
-      if(!skySkyMode){
-         // world-sky frame
-        if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
-          m = inv(m);//RigTForm(Cvec3(dx, dy, 0) * -0.01);
-        }
-        else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
-          m = inv(m);//RigTForm(Cvec3(0, 0, dy) * 0.01);
-        }
-        a = RigTForm(g_objectRbt[viewMode].getRotation());
-      }
+  if(g_currentPickedRbtNode == *viewNodes[viewMode]){
+    // ego motion for undifined picked node
+    if(skySkyMode || (viewMode != Skycam)){
 
-      else{
-        a = RigTForm(g_objectRbt[modifyMode].getTranslation(), g_objectRbt[viewMode].getRotation());
-      }
-
-      if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
+      a = eyeMat;
+      if (g_mouseLClickButton && !g_mouseRClickButton)
         m = inv(m);
 
-      }
-    }
-    else{
-      cout << "Cannot modify sky camera in cube view!" << endl;
-      return;
-    }
+      g_currentPickedRbtNode->setRbt(a * m * inv(a) * g_currentPickedRbtNode->getRbt());
 
-  }else{
-    a = RigTForm(g_objectRbt[modifyMode].getTranslation(), g_objectRbt[viewMode].getRotation());
-    if (modifyMode == viewMode && g_mouseLClickButton && !g_mouseRClickButton)
+    }else if(!skySkyMode && (viewMode == Skycam)){
+      // world-sky frame
+      a = RigTForm(eyeMat.getRotation());
       m = inv(m);
+      g_currentPickedRbtNode->setRbt(a * m * inv(a) * g_currentPickedRbtNode->getRbt());
+    }
+  }else{
+    // arcball motion for non-ego objects
+    RigTForm objectRbt = getPathAccumRbt(g_world, g_currentPickedRbtNode);
+    RigTForm parentRbt = getPathAccumRbt(g_world, g_currentPickedRbtNode, 1);
+    a = RigTForm((inv(parentRbt) * objectRbt).getTranslation(), eyeMat.getRotation());
+    g_currentPickedRbtNode->setRbt(a * m * inv(a) * g_currentPickedRbtNode->getRbt());
   }
 
+
   if (g_mouseClickDown) {
-    g_objectRbt[modifyMode] = a * m * inv(a) * g_objectRbt[modifyMode]; // Simply right-multiply is WRONG
+    //g_currentPickedRbtNode->setRbt(a * m * inv(a) * g_currentPickedRbtNode->getRbt()); // Simply right-multiply is WRONG
     glutPostRedisplay(); // we always redraw if we changed the scene
   }
 
@@ -524,7 +533,9 @@ static void mouse(const int button, const int state, const int x, const int y) {
     if(pickingMode){
       pick();
       pickingMode = false;
-      cout << "Picking Finished!\n";
+      cout << "Picking Finished!\n\n";
+
+
     }
   }
 
@@ -553,7 +564,12 @@ static void keyboard(const unsigned char key, const int x, const int y) {
     g_activeShader ^= 1;
     break;
   case 'v':
-    viewMode = static_cast<Mode>((viewMode+1)%3);
+    if(*viewNodes[viewMode] == g_currentPickedRbtNode){
+      viewMode = static_cast<Mode>((viewMode+1)%3);
+      g_currentPickedRbtNode = *viewNodes[viewMode];
+    }else{
+      viewMode = static_cast<Mode>((viewMode+1)%3);
+    }
 
     cout << "viewMode : ";
     if(viewMode == Robot1) cout << "robot 1"<< endl;
@@ -562,13 +578,20 @@ static void keyboard(const unsigned char key, const int x, const int y) {
     break;
 
   case 'm':
-    if(modifyMode == Skycam && viewMode == Skycam){
       g_arcballScaleUpdate = true;
       skySkyMode = !skySkyMode;
       cout << "modifying skyCam in skyCam view : ";
       if(skySkyMode) cout << "sky-sky frame" << endl;
       else cout << "world-sky frame" << endl;
-    }
+      if(!(skySkyMode && viewMode == Skycam && *viewNodes[viewMode] == g_currentPickedRbtNode) &&
+         !(*viewNodes[viewMode] == g_currentPickedRbtNode && viewMode != Skycam) &&
+         !(viewMode != Skycam && g_currentPickedRbtNode == g_skyNode)){
+           cout<< "arcball mode!" << endl;
+           g_arcballMode = true;
+         }else {
+           g_arcballMode = false;
+         }
+      cout<<endl;
     break;
   case 'p':
       pickingMode = !pickingMode;
@@ -576,6 +599,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
       else cout << "Dont' Pick Me!!!\n";
     break;
   }
+
   glutPostRedisplay();
 }
 
