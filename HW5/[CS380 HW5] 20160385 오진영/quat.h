@@ -169,9 +169,14 @@ inline Quat power(const Quat& q1, const float alpha){
   double theta = atan2(sinTheta, q[0]);
 
   Quat answer =  Quat(cos(alpha*theta), sin(alpha * theta) * q[1], sin(alpha * theta) * q[2], sin(alpha * theta) * q[3]);
+  if (sinTheta != 0) {
+      answer /=sinTheta;
+      answer[0] *= sinTheta;
+  }
+  return answer;
 
-  assert(answer[0] > 0);
-  return normalize(answer);
+  //assert(answer[0] > 0);
+  //return normalize(answer);
 }
 
 inline Quat slerp(const Quat& startQuat, const Quat& endQuat, const float alpha){
