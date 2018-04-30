@@ -6,6 +6,7 @@
 //
 ////////////////////////////////////////////////////////////////////////
 
+#include <list>
 #include <vector>
 #include <string>
 #include <memory>
@@ -32,6 +33,7 @@
 #include "scenegraph.h"
 #include "drawer.h"
 #include "picker.h"
+#include "sgutils.h"
 
 using namespace std;      // for string, vector, iostream, and other standard C++ stuff
 using namespace tr1; // for shared_ptr
@@ -193,6 +195,12 @@ static RigTForm g_objectRbt[3] = {RigTForm(Cvec3(-1,0,0)), // currently only 1 o
                                  RigTForm(Cvec3(1,0,0)),
                                g_skyRbt};  // new one
 static Cvec3f g_objectColors[2] = {Cvec3f(1, 0, 0), Cvec3f(0, 1, 0)};
+
+// --------- For HW 5
+static list<vector<RigTForm> > frames;
+static list<vector<RigTForm> >::iterator frameIterator = frames.begin();
+static int currentFrameIdx = -1;
+static int rbtNodesSize = -1;
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
@@ -543,6 +551,83 @@ static void mouse(const int button, const int state, const int x, const int y) {
   glutPostRedisplay();
 }
 
+static void frameToScene(){
+  if(frames.size() == 0){
+    cout << "Warning : Current frame is null! Please define frame first" << endl;
+    return;
+  }
+
+  vector<shared_ptr<SgRbtNode> > rbtNodes;
+  dumpSgRbtNodes(g_world, rbtNodes);
+
+  for(int i = 0; i < rbtNodesSize; i++){
+    rbtNodes[i] -> setRbt((*frameIterator)[i]);
+  }
+}
+
+static void newFrame(){
+
+  vector<shared_ptr<SgRbtNode> > rbtNodes;
+  dumpSgRbtNodes(g_world, rbtNodes);
+  rbtNodesSize = rbtNodes.size();
+  vector<RigTForm> newFrame(rbtNodes.size());
+  for(int i = 0; i < rbtNodes.size(); i++){
+    newFrame[i] = rbtNodes[i]->getRbt();
+  }
+
+  if(frames.size() != 0){ //If the current key frame is deﬁned,
+  //create a new key frame immediately after current key frame.
+    frames.insert(++frameIterator, newFrame);
+    --frameIterator;
+    cout << "current frame is saved as keyframe[" << ++currentFrameIdx << "]!" << endl;
+  }else{// Otherwise just create a new key frame
+  // Copy scene graph RBT data to the new key frame.
+  // Set the current key frame to the newly created key frame.
+    frames.insert(frameIterator, newFrame);
+    --frameIterator;
+    currentFrameIdx++;
+    cout << "current frame is saved as keyframe[" << currentFrameIdx << "]!" << endl;
+
+  }
+
+
+  }
+
+static void updateFrame(){
+
+  vector<shared_ptr<SgRbtNode> > rbtNodes;
+
+  dumpSgRbtNodes(g_world, rbtNodes);
+  rbtNodesSize = rbtNodes.size();
+  vector<RigTForm> newFrame(rbtNodes.size());
+  for(int i = 0; i < rbtNodes.size(); i++){
+    newFrame[i] = rbtNodes[i]->getRbt();
+  }
+
+  list<vector<RigTForm> >::iterator temp = frameIterator;
+  ++temp;
+  frames.insert(temp, newFrame);
+  frames.erase(frameIterator);
+  frameIterator = --temp;
+  cout << "current frame is updated for keyframe[" << currentFrameIdx << "]!" << endl;
+}
+
+static void printList(){
+  if(frames.size() == 0){cout << "Empty Frame list!" << endl; return;}
+
+  cout << frames.size() << " " << rbtNodesSize << endl;
+  for(list<vector<RigTForm> >::iterator iter = frames.begin(),
+      end = frames.end();
+      iter != end; ++iter){
+    for(int i = 0; i < rbtNodesSize; i++){
+      Cvec3 trans = (*iter)[i].getTranslation();
+      Quat rot = (*iter)[i].getRotation();
+      cout << trans[0] <<" "<< trans[1]<<" "<<trans[2]<<" / "<<rot[0]<<" "<< rot[1]<<" "<< rot[2] << endl;
+    }
+    //cout << endl;
+  }
+  cout << endl << endl << endl << endl;
+}
 
 static void keyboard(const unsigned char key, const int x, const int y) {
   switch (key) {
@@ -577,7 +662,6 @@ static void keyboard(const unsigned char key, const int x, const int y) {
     else if(viewMode == Robot2) cout << "robot 2"<< endl;
     else cout << "sky camera" << endl;
     break;
-
   case 'm':
       g_arcballScaleUpdate = true;
       skySkyMode = !skySkyMode;
@@ -598,6 +682,41 @@ static void keyboard(const unsigned char key, const int x, const int y) {
       pickingMode = !pickingMode;
       if(pickingMode) cout << "Pick Me!!!\n";
       else cout << "Dont' Pick Me!!!\n";
+    break;
+  case ' ': // Space : Copy current key frame RBT data to the scene graph if the current key frame is deﬁned (i.e., the list of frames is not empty).
+    frameToScene();
+    break;
+  case 'u':  // update:
+    if(frames.size() != 0){ //if the current key frame is deﬁned (i.e., the list of frames is not empty).
+      // Copy the scene graph RBT data to the current key frame
+      updateFrame();
+      break;
+    }else{ // If the list of frames is empty, apply the action corresponding to hotkey “n”
+      newFrame();
+      break;
+    }
+  case 'n':  // “n” : If the current key frame is deﬁned, create a new key frame immediately after current key frame.
+    // Otherwise just create a new key frame. Copy scene graph RBT data to the new key frame. Set the current key frame to the newly created key frame.
+    newFrame();
+    break;
+  case '>':  // “>” : advance to next key frame (if possible). Then copy current key frame data to the scene graph.
+
+    break;
+  case '<':  // “<” : retreat to previous key frame (if possible). Then copy current key frame data to scene graph.
+
+    break;
+  case 'd':  // “d” : If the current key frame is deﬁned, delete the current key frame and do the following:
+    // – If the list of frames is empty after the deletion, set the current key frame to undeﬁned.
+    // – Otherwise
+    // ∗ If the deleted frame is not the ﬁrst frame, set the current frame to the frame immediately before the deleted frame
+    // ∗ Else set the current frame to the frame immediately after the deleted frame ∗ Copy RBT data from the new current frame to the scene graph.
+
+    break;
+  case 'i':  // “i” : input key frames from input ﬁle. (You are free to choose your own ﬁle format.) Set current key frame to the ﬁrst frame. Copy this frame to the scene graph.
+
+    break;
+  case 'w':  // “w” : output key frames to output ﬁle. Make sure ﬁle format is consistent with input format.
+    printList();
     break;
   }
 

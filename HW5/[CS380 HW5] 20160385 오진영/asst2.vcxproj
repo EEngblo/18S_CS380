@@ -118,6 +118,7 @@
     <ClInclude Include="quat.h" />
     <ClInclude Include="rigtform.h" />
     <ClInclude Include="scenegraph.h" />
+    <ClInclude Include="sgutils.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="AUTHORS" />
