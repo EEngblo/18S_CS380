@@ -174,4 +174,15 @@ typedef Cvec <unsigned char, 2> Cvec2ub;
 typedef Cvec <unsigned char, 3> Cvec3ub;
 typedef Cvec <unsigned char, 4> Cvec4ub;
 
+
+inline Cvec3 lerp(const Cvec3& startVec, const Cvec3& endVec, const float alpha){
+  Cvec3 answer = Cvec3();
+  answer[0] = (1-alpha)*startVec[0] + alpha*endVec[0];
+  answer[1] = (1-alpha)*startVec[1] + alpha*endVec[1];
+  answer[2] = (1-alpha)*startVec[2] + alpha*endVec[2];
+
+  return answer;
+}
+
+
 #endif

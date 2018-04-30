@@ -202,6 +202,10 @@ static list<vector<RigTForm> > frames;
 static list<vector<RigTForm> >::iterator currentFrame = frames.begin();
 static int currentFrameIdx = -1;
 static int rbtNodesSize = -1;
+static int g_msBetweenKeyFrames = 2000; // 2 seconds between keyframes
+static int g_animateFramesPerSecond = 60; // frames to render per second during animation playback
+static bool animating = false;
+static unsigned int g_clock = 0;
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
@@ -685,6 +689,66 @@ static void readList(){
 
 }
 
+// Given t in the range [0, n], perform interpolation and draw the scene
+// for the particular t. Returns true if we are at the end of the animation
+// sequence, or false otherwise.
+
+bool interpolateAndDisplay(float t) {
+
+  //cout << t << " " << frames.size()<< endl;
+
+  if(t > frames.size()-3){
+    //cout << "SADfasdf" << endl;
+    return true;
+  }
+  int startKeyIdx = floor(t) + 1;
+  float alpha = t - floor(t);
+  list<vector<RigTForm> >::iterator startFrame = frames.begin();
+
+  for(int i = 0; i<startKeyIdx; i++){
+    startFrame++;
+  }
+  // now, startFrame points the start keyframe
+  list<vector<RigTForm> >::iterator endFrame = startFrame;
+  endFrame++;
+  // now, endFrame points the end keyframe
+
+  vector<shared_ptr<SgRbtNode> > rbtNodes;
+  dumpSgRbtNodes(g_world, rbtNodes);
+
+  for(int i = 0; i < rbtNodesSize; i++){
+    rbtNodes[i] -> setRbt(slerp((*startFrame)[i], (*endFrame)[i], alpha));
+  }
+
+  glutPostRedisplay();
+  return false;
+}
+
+// Interpret "ms" as milliseconds into the animation
+static void animateTimerCallback(int ms) {
+  float t = (float)ms/(float)g_msBetweenKeyFrames;
+
+  bool endReached = interpolateAndDisplay(t);
+
+  //cout << endReached << animating << endl;
+  if (!endReached && animating)
+    glutTimerFunc(1000/g_animateFramesPerSecond, animateTimerCallback, ms + 1000/g_animateFramesPerSecond);
+  else {
+    cout << "Finished animating... go to the end of animation." << endl;
+    animating = false;
+    currentFrame = frames.end();
+    --currentFrame;
+    --currentFrame;
+    currentFrameIdx = frames.size() - 2;
+    frameToScene();
+    glutPostRedisplay();
+    return;
+  }
+
+}
+
+// 시간이 bin 파일과 다르게 흐르는데 이에 대한 채점 여하 묻기
+
 static void keyboard(const unsigned char key, const int x, const int y) {
   switch (key) {
   case 27:
@@ -810,6 +874,41 @@ static void keyboard(const unsigned char key, const int x, const int y) {
       printList();
       break;
     }
+
+  case 'y':
+    if(frames.size() < 4){
+      cout << "Need more or equal than 4 key frames in order to animate." << endl;
+      break;
+    }else{
+      if(animating){
+        cout << "Force Stop animating... go to the end of animation." << endl;
+        currentFrame = frames.end();
+        --currentFrame;
+        --currentFrame;
+        currentFrameIdx = frames.size() - 2;
+        frameToScene();
+        animating = false;
+      }else{
+        cout << "Start animating..." << endl;
+        animating = true;
+        g_clock = 0;
+        animateTimerCallback(g_clock);
+
+      }
+      break;
+    }
+  case '+': // hard-coded unit variance for 100ms since sample exe file uses it
+    if(g_msBetweenKeyFrames == 100){
+      cout << "Cannot decrease g_msBetweenKeyFrames lower than 100" <<endl;
+    }else{
+      g_msBetweenKeyFrames -= 100;
+      cout << "g_msBetweenKeyFrames decreased 100 : " << g_msBetweenKeyFrames << "ms" <<endl;
+    }
+    break;
+  case '-':
+    g_msBetweenKeyFrames += 100;
+    cout << "g_msBetweenKeyFrames increased 100 : " << g_msBetweenKeyFrames << "ms" <<endl;
+    break;
   }
 
   glutPostRedisplay();

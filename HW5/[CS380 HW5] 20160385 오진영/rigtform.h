@@ -109,7 +109,12 @@ inline Matrix4 rigTFormToMatrix(const RigTForm& tform) {
   return T * R;
 }
 
-
+inline RigTForm slerp(const RigTForm& startRbt, const RigTForm& endRbt, const float alpha){
+  Cvec3 trans = lerp(startRbt.getTranslation(), endRbt.getTranslation(), alpha);
+  Quat rot = slerp(startRbt.getRotation(), endRbt.getRotation(), alpha);
+  //  while(1){};
+  return RigTForm(trans, rot);
+}
 
 
 #endif

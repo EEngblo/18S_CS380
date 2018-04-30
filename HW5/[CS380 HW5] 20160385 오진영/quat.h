@@ -154,4 +154,32 @@ inline Matrix4 quatToMatrix(const Quat& q) {
   return r;
 }
 
+inline Quat cn(const Quat& q){
+  if(q[0] < 0) return Quat(-1 * q(0), q(1), q(2), q(3));
+  return q;
+}
+
+inline Quat power(const Quat& q1, const float alpha){
+  Quat q;
+  if(q1[0] < 0) q = Quat(-1 * q1(0), q1(1), q1(2), q1(3));
+  else q = q1;
+
+  assert(q[0] > 0);
+  double sinTheta = sqrt(q[1]*q[1] + q[2]*q[2] + q[3]*q[3]);
+  double theta = atan2(sinTheta, q[0]);
+
+  Quat answer =  Quat(cos(alpha*theta), sin(alpha * theta) * q[1], sin(alpha * theta) * q[2], sin(alpha * theta) * q[3]);
+
+  assert(answer[0] > 0);
+  return normalize(answer);
+}
+
+inline Quat slerp(const Quat& startQuat, const Quat& endQuat, const float alpha){
+  //Quat temp = cn(endQuat * inv(startQuat));
+
+  Quat answer = power(endQuat * inv(startQuat),alpha) * startQuat;
+
+  return answer;
+}
+
 #endif
