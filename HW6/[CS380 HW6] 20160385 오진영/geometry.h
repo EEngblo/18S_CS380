@@ -245,7 +245,7 @@ public:
 
   // Return if we are in indexed mode
   bool isIndexed() const {
-    return ib_;
+    return ib_ ? true : false;
   }
 
   // Return the primitive types we are drawing using. Default is GL_TRIANGLES

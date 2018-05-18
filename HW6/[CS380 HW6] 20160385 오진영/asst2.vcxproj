@@ -99,29 +99,41 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="geometry.cpp" />
     <ClCompile Include="glsupport.cpp" />
+    <ClCompile Include="material.cpp" />
     <ClCompile Include="picker.cpp" />
     <ClCompile Include="ppm.cpp" />
     <ClCompile Include="asst2.cpp" />
+    <ClCompile Include="renderstates.cpp" />
     <ClCompile Include="scenegraph.cpp" />
+    <ClCompile Include="texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="arcball.h" />
     <ClInclude Include="asstcommon.h" />
     <ClInclude Include="cvec.h" />
     <ClInclude Include="drawer.h" />
+    <ClInclude Include="geometry.h" />
     <ClInclude Include="geometrymaker.h" />
     <ClInclude Include="glsupport.h" />
+    <ClInclude Include="material.h" />
     <ClInclude Include="matrix4.h" />
     <ClInclude Include="picker.h" />
     <ClInclude Include="ppm.h" />
     <ClInclude Include="quat.h" />
+    <ClInclude Include="renderstates.h" />
     <ClInclude Include="rigtform.h" />
     <ClInclude Include="scenegraph.h" />
     <ClInclude Include="sgutils.h" />
+    <ClInclude Include="texture.h" />
+    <ClInclude Include="uniforms.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="asst2.vcxproj.user" />
     <None Include="AUTHORS" />
+    <None Include="Fieldstone.ppm" />
+    <None Include="FieldstoneNormal.ppm" />
     <None Include="glew32.dll" />
     <None Include="glut32.dll" />
     <None Include="LICENSE" />
@@ -134,6 +146,7 @@
     <None Include="shaders\solid-gl3.fshader" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="animation.txt" />
     <Text Include="README.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
