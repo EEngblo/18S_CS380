@@ -121,7 +121,7 @@ typedef SgGeometryShapeNode MyShapeNode;
 // Vertex buffer and index buffer associated with the ground and cube geometry
 static shared_ptr<Geometry> g_ground, g_cube, g_sphere;
 static shared_ptr<SgRootNode> g_world;
-static shared_ptr<SgRbtNode> g_skyNode, g_groundNode, g_robot1Node, g_robot2Node;
+static shared_ptr<SgRbtNode> g_skyNode, g_groundNode, g_robot1Node, g_robot2Node, g_light1Node, g_light2Node;
 static shared_ptr<SgRbtNode> g_currentPickedRbtNode; // used later when you do picking
 static shared_ptr<SgRbtNode> *viewNodes[3] = {&g_robot1Node, &g_robot2Node, &g_skyNode};
 
@@ -226,8 +226,11 @@ static void drawStuff(bool picking)  {
   //===================================================================
   invEyeRbt = inv(eyeRbt);
 
-  const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
-  const Cvec3 eyeLight2 = Cvec3(invEyeRbt * Cvec4(g_light2, 1)); // g_light2 position in eye coordinates
+  Cvec3 light1 = getPathAccumRbt(g_world, g_light1Node).getTranslation();
+  Cvec3 light2 = getPathAccumRbt(g_world, g_light2Node).getTranslation();
+
+  const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(light1, 1)); // g_light1 position in eye coordinates
+  const Cvec3 eyeLight2 = Cvec3(invEyeRbt * Cvec4(light2, 1)); // g_light2 position in eye coordinates
   // send the eye space coordinates of lights to uniforms
   uniforms.put("uLight", eyeLight1);
   uniforms.put("uLight2", eyeLight2);
@@ -998,6 +1001,15 @@ static void initScene() {
   g_groundNode->addChild(shared_ptr<MyShapeNode>(
                         new MyShapeNode(g_ground, g_bumpFloorMat, Cvec3(0, g_groundY, 0))));
 
+  g_light1Node.reset(new SgRbtNode(RigTForm(Cvec3(2, 2, 2))));
+  g_light2Node.reset(new SgRbtNode(RigTForm(Cvec3(-2, -2, -2))));
+  g_light1Node->addChild(shared_ptr<MyShapeNode>(
+    new MyShapeNode(g_sphere, g_lightMat, Cvec3(0, 0, 0))
+  ));
+  g_light2Node->addChild(shared_ptr<MyShapeNode>(
+    new MyShapeNode(g_sphere, g_lightMat, Cvec3(0, 0, 0))
+  ));
+
   g_robot1Node.reset(new SgRbtNode(RigTForm(Cvec3(-2, 1, 0))));
   g_robot2Node.reset(new SgRbtNode(RigTForm(Cvec3(2, 1, 0))));
 
@@ -1010,6 +1022,8 @@ static void initScene() {
   g_world->addChild(g_groundNode);
   g_world->addChild(g_robot1Node);
   g_world->addChild(g_robot2Node);
+  g_world->addChild(g_light1Node);
+  g_world->addChild(g_light2Node);
 }
 
 int main(int argc, char * argv[]) {
