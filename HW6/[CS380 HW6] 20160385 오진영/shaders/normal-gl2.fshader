@@ -5,14 +5,21 @@ uniform sampler2D uTexNormal;
 uniform vec3 uLight;
 uniform vec3 uLight2;
 
-varying vec2 vTexCoord;
+varying vec2 vTexCoord; // texture coordinates from vertex shader
 varying mat3 vNTMat;
 varying vec3 vEyePos;
 
 void main() {
+
+  //vec2 nTexCoord_h = (vTexCoord - vec2(.5, .5));
+  //vec2 nTexCoord = nTexCoord_h + nTexCoord_h;
+  vec3 normCoord = (texture2D(uTexNormal, vTexCoord).xyz - vec3(.5, .5, .5)) * 2.0;
+  vec3 normal = normalize(vNTMat * normCoord);
+
+
   // TODO: replace the following line with loading of normal from uTexNormal
   //       transforming to eye space, and normalizing
-  vec3 normal = vec3(0, 0, 1);
+  // normal = vec3(0, 0, 1);
 
   vec3 viewDir = normalize(-vEyePos);
   vec3 lightDir = normalize(uLight - vEyePos);

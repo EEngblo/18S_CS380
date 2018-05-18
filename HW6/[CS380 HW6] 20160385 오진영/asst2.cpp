@@ -1001,8 +1001,8 @@ static void initScene() {
   g_groundNode->addChild(shared_ptr<MyShapeNode>(
                         new MyShapeNode(g_ground, g_bumpFloorMat, Cvec3(0, g_groundY, 0))));
 
-  g_light1Node.reset(new SgRbtNode(RigTForm(Cvec3(2, 2, 2))));
-  g_light2Node.reset(new SgRbtNode(RigTForm(Cvec3(-2, -2, -2))));
+  g_light1Node.reset(new SgRbtNode(RigTForm(Cvec3(3,8,-4))));
+  g_light2Node.reset(new SgRbtNode(RigTForm(Cvec3(-4,1,1))));
   g_light1Node->addChild(shared_ptr<MyShapeNode>(
     new MyShapeNode(g_sphere, g_lightMat, Cvec3(0, 0, 0))
   ));
