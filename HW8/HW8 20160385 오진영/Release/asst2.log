@@ -1,0 +1,19 @@
+﻿  geometry.cpp
+y:\google 드라이브\1. 2018시즌 전반기\2. 컴그개\18s_cs380\hw8\hw8 20160385 오진영\glsupport.h(7): fatal error C1083: 포함 파일을 열 수 없습니다. 'GL/glew.h': No such file or directory
+  glsupport.cpp
+y:\google 드라이브\1. 2018시즌 전반기\2. 컴그개\18s_cs380\hw8\hw8 20160385 오진영\glsupport.h(7): fatal error C1083: 포함 파일을 열 수 없습니다. 'GL/glew.h': No such file or directory
+  material.cpp
+y:\google 드라이브\1. 2018시즌 전반기\2. 컴그개\18s_cs380\hw8\hw8 20160385 오진영\glsupport.h(7): fatal error C1083: 포함 파일을 열 수 없습니다. 'GL/glew.h': No such file or directory
+  picker.cpp
+y:\google 드라이브\1. 2018시즌 전반기\2. 컴그개\18s_cs380\hw8\hw8 20160385 오진영\picker.cpp(1): fatal error C1083: 포함 파일을 열 수 없습니다. 'GL/glew.h': No such file or directory
+  ppm.cpp
+y:\google 드라이브\1. 2018시즌 전반기\2. 컴그개\18s_cs380\hw8\hw8 20160385 오진영\ppm.cpp(10): fatal error C1083: 포함 파일을 열 수 없습니다. 'GL/glew.h': No such file or directory
+  asst2.cpp
+y:\google 드라이브\1. 2018시즌 전반기\2. 컴그개\18s_cs380\hw8\hw8 20160385 오진영\asst2.cpp : warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+y:\google 드라이브\1. 2018시즌 전반기\2. 컴그개\18s_cs380\hw8\hw8 20160385 오진영\asst2.cpp(19): fatal error C1083: 포함 파일을 열 수 없습니다. 'GL/glew.h': No such file or directory
+  renderstates.cpp
+y:\google 드라이브\1. 2018시즌 전반기\2. 컴그개\18s_cs380\hw8\hw8 20160385 오진영\glsupport.h(7): fatal error C1083: 포함 파일을 열 수 없습니다. 'GL/glew.h': No such file or directory
+  scenegraph.cpp
+y:\google 드라이브\1. 2018시즌 전반기\2. 컴그개\18s_cs380\hw8\hw8 20160385 오진영\glsupport.h(7): fatal error C1083: 포함 파일을 열 수 없습니다. 'GL/glew.h': No such file or directory
+  texture.cpp
+y:\google 드라이브\1. 2018시즌 전반기\2. 컴그개\18s_cs380\hw8\hw8 20160385 오진영\glsupport.h(7): fatal error C1083: 포함 파일을 열 수 없습니다. 'GL/glew.h': No such file or directory
