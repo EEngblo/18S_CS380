@@ -116,10 +116,14 @@ static Mesh defaultMesh;
 static shared_ptr< SimpleUnindexedGeometry<VertexPN> > messi;
 static shared_ptr<SgRbtNode> g_meshNode;
 
-static int g_MeshFramesPerSecond = 10;
+static int g_MeshFramesPerSecond = 20;
 static int g_messiSpeed = 16; // 커질 수록 빨라 짐.
+static int g_speedlevel = 4;
+static bool g_messiSpeedChanged = false;
 
-static int g_subdivisionLevel = 5;
+static int g_subdivisionLevel = 1;
+
+static bool g_useSmoothShading = false;
 
 // HW7 end ====================================================
 shared_ptr<Material> g_overridingMaterial;
@@ -163,14 +167,23 @@ static vector<VertexPN> meshFormTriangle(Mesh &mesh){
 
   vector<VertexPN> answer;
 
-  for(int i = 0; i < mesh.getNumFaces(); ++i){
+  int nf = mesh.getNumFaces();
+
+  for(int i = 0; i < nf; ++i){
     const Mesh::Face f = mesh.getFace(i);
 
-    for(int j = 1; j < f.getNumVertices() -1; ++j){
-      answer.push_back(VertexPN(f.getVertex(0).getPosition(), f.getVertex(0).getNormal()));
-      answer.push_back(VertexPN(f.getVertex(j).getPosition(), f.getVertex(j).getNormal()));
-      answer.push_back(VertexPN(f.getVertex(j + 1).getPosition(), f.getVertex(j+1).getNormal()));
-
+    if(g_useSmoothShading){
+      for(int j = 1; j < f.getNumVertices() -1; ++j){
+        answer.push_back(VertexPN(f.getVertex(0).getPosition(), f.getVertex(0).getNormal()));
+        answer.push_back(VertexPN(f.getVertex(j).getPosition(), f.getVertex(j).getNormal()));
+        answer.push_back(VertexPN(f.getVertex(j + 1).getPosition(), f.getVertex(j+1).getNormal()));
+      }
+    }else{
+      for(int j = 1; j < f.getNumVertices() -1; ++j){
+        answer.push_back(VertexPN(f.getVertex(0).getPosition(), f.getNormal()));
+        answer.push_back(VertexPN(f.getVertex(j).getPosition(), f.getNormal()));
+        answer.push_back(VertexPN(f.getVertex(j + 1).getPosition(), f.getNormal()));
+      }
     }
   }
 
@@ -180,29 +193,38 @@ static vector<VertexPN> meshFormTriangle(Mesh &mesh){
 static void meshInitNormal(Mesh &mesh){
 
   Cvec3 ttemp = Cvec3();
+  int nv = mesh.getNumVertices();
+  int nf = mesh.getNumFaces();
 
-  for(int i = 0; i < mesh.getNumVertices(); ++i){
-    const Mesh::Vertex v = mesh.getVertex(i);
-    Cvec3 temp = Cvec3();
+  if(g_useSmoothShading){
+    for(int i = 0; i < nv; ++i){
+      const Mesh::Vertex v = mesh.getVertex(i);
+      Cvec3 temp = Cvec3();
 
-    Mesh::VertexIterator it(v.getIterator()), it0(it);
-    do{
-      temp += it.getFace().getNormal();
-    }while (++it != it0);
+      Mesh::VertexIterator it(v.getIterator()), it0(it);
+      do{
+        temp += it.getFace().getNormal();
+      }while (++it != it0);
 
-    if(dot(temp, temp) != 0){
-      // to avoid Division-by-Zero
-      temp.normalize();
+      if(dot(temp, temp) != 0){
+        // to avoid Division-by-Zero
+        temp.normalize();
+      }
+
+      v.setNormal(temp);
     }
-
-    v.setNormal(temp);
   }
 }
 
 static void subdivision(Mesh &mesh){
 
   // to ﬁrst loop over all of the faces of the mesh and compute faceVertex values.
-  for(int i = 0; i < mesh.getNumFaces(); i++){
+
+  int nf = mesh.getNumFaces();
+  int ne = mesh.getNumEdges();
+  int nv = mesh.getNumVertices();
+
+  for(int i = 0; i < nf; i++){
     Mesh::Face f = mesh.getFace(i);
     Cvec3 temp = Cvec3();
 
@@ -214,7 +236,7 @@ static void subdivision(Mesh &mesh){
   }
 
   // Then loop over all of the edges and compute edgeVertex values.
-  for(int i = 0; i < mesh.getNumEdges(); i++){
+  for(int i = 0; i < ne; i++){
     Mesh::Edge e = mesh.getEdge(i);
     Cvec3 temp = e.getVertex(0).getPosition() + e.getVertex(1).getPosition();
     temp += mesh.getNewFaceVertex(e.getFace(0)) + mesh.getNewFaceVertex(e.getFace(1));
@@ -224,7 +246,7 @@ static void subdivision(Mesh &mesh){
   }
 
   // Then loop over all of the vertices and compute vertexVertex values.
-  for(int i = 0; i < mesh.getNumVertices(); i++){
+  for(int i = 0; i < nv; i++){
     Mesh::Vertex v = mesh.getVertex(i);
     Cvec3 temp = Cvec3();
     int cnt = 0;
@@ -257,7 +279,7 @@ static void animateMeshTimerCallback(int ms) {
   for (int i = 0; i < messiMesh.getNumVertices(); i++) {
     Mesh::Vertex v = messiMesh.getVertex(i);
 
-    v.setPosition(v.getPosition() * 1.5 + v.getPosition() * (sin((i * i + 10 * i) + ms / 250.0)));
+    v.setPosition(v.getPosition() * 1.1 + v.getPosition() * (sin((i * i + 10 * i) + ms / 250.0)));
   }
 
   for (int i = 0; i < g_subdivisionLevel; i++)
@@ -268,6 +290,7 @@ static void animateMeshTimerCallback(int ms) {
   messi->upload(&vertices[0], vertices.size());
 
   glutPostRedisplay();
+
   glutTimerFunc(1000/g_MeshFramesPerSecond, animateMeshTimerCallback, ms + g_messiSpeed);
 
 ///////////////////////////////////////////////////////////
@@ -855,6 +878,7 @@ static void animateTimerCallback(int ms) {
 // 시간이 bin 파일과 다르게 흐르는데 이에 대한 채점 여하 묻기
 
 static void keyboard(const unsigned char key, const int x, const int y) {
+  int temp, cnt;
   switch (key) {
   case 27:
     exit(0);                                  // ESC
@@ -1010,6 +1034,33 @@ static void keyboard(const unsigned char key, const int x, const int y) {
   case '-':
     g_msBetweenKeyFrames += 100;
     cout << "g_msBetweenKeyFrames increased 100 : " << g_msBetweenKeyFrames << "ms" <<endl;
+    break;
+
+  // HW7
+  case 'f':
+    g_useSmoothShading = !g_useSmoothShading;
+    if(g_useSmoothShading) cout << "Use smooth shading" <<endl;
+    else cout << "Use flat shading" << endl;
+    break;
+  case '0':
+    g_subdivisionLevel = g_subdivisionLevel > 5 ? g_subdivisionLevel : g_subdivisionLevel + 1;
+    cout << "subdivision level: " << g_subdivisionLevel << endl;
+    break;
+  case '9':
+    g_subdivisionLevel = g_subdivisionLevel == 0 ? g_subdivisionLevel : g_subdivisionLevel - 1;
+    cout << "subdivision level: " << g_subdivisionLevel << endl;
+    break;
+  case '7':
+    g_speedlevel = g_speedlevel == 3 ? g_speedlevel : g_speedlevel - 1;
+    g_messiSpeedChanged = true;
+    g_messiSpeed = 1 << (g_speedlevel - 1);
+    cout << "Animation speed level: " << g_speedlevel-2 <<", "<< g_messiSpeed<< endl;
+    break;
+  case '8':
+    g_speedlevel = g_speedlevel == 8 ? g_speedlevel : g_speedlevel + 1;
+    g_messiSpeedChanged = true;
+    g_messiSpeed = 1 << (g_speedlevel - 1);
+    cout << "Animation speed level: " << g_speedlevel-2  <<", "<< g_messiSpeed<< endl;
     break;
   }
 
